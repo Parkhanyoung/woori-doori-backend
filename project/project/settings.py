@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-PARKHANYOUNG = True
+PARKHANYOUNG = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'user',
     'couple_network',
     'date_post',
-    
+
 ]
 
 MIDDLEWARE = [
@@ -172,6 +172,6 @@ REST_FRAMEWORK = {
 
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
- 'http://localhost:3000',
- 'http://127.0.0.1:3000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]
