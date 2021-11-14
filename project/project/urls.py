@@ -19,5 +19,7 @@ from django.urls.conf import include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user-api/', include('user.urls'))
+    path('user-api/', include('user.urls')),
+    path('network-api/', include('couple_network.urls')),
+    path('post-api/', include('date_post.urls')),
 ]

@@ -11,6 +11,7 @@ django-environ = "*"
 mysqlclient = "*"
 python-dotenv = "*"
 flake8 = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
