@@ -1,6 +1,5 @@
 from user.models import Profile
 from couple_network.models import CoupleNet
-from .models import Place, DayComment
 from .serializers import DayCommentDetailSerializer, PlaceSerializer,  \
                          PostDetailSerializer, DayCommentCreateSerializer, \
                          DatePostCommentSerializer, PostCreateSerializer
@@ -12,6 +11,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import get_object_or_404
+
+import re
 
 
 class PlaceAPIView(APIView):
@@ -35,10 +36,10 @@ class PlaceAPIView(APIView):
             if not value_query:
                 msg = {'Err': 'value 쿼리스트링을 포함해야 합니다.'}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
-            places = couple.places.all().filter(category=value_query
-                                             ).order_by('-visit_count')
+            places = couple.places.all().filter(category=value_query).order_by(
+                                                '-visit_count')
         serializer = PlaceSerializer(places, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)    
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         me = get_object_or_404(Profile, user=request.user)
@@ -70,19 +71,29 @@ class DatePostAPIView(APIView):
         couple = get_object_or_404(CoupleNet, members=me)
         filter_query = request.query_params.get('filter')
         value_query = request.query_params.get('value')
+        date_type = re.compile('\d{4}-\d{2}-\d{2}') # noqa
         if not (filter_query and value_query):
             msg = {'Err': 'filter 및 value 쿼리스트링이 모두 필요합니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
-        elif not (filter_query == 'placepk' or 
-                  filter_query == 'when' or 
+        elif not (filter_query == 'placepk' or
+                  filter_query == 'when' or
                   filter_query == 'postpk'):
             msg = {'Err': 'filter 쿼리스트링 값이 올바르지 않습니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         elif filter_query == 'placepk':
+            if not value_query.isdecimal():
+                msg = {'Err': 'value 쿼리스트링이 Int형이어야 합니다.'}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             posts = couple.posts.all().filter(place__pk=value_query)
         elif filter_query == 'when':
+            if not date_type.match(value_query):
+                msg = {'Err': 'value 쿼리스트링이 YYYY-MM-DD의 형태여야 합니다.'}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             posts = couple.posts.all().filter(when=value_query)
         elif filter_query == 'postpk':
+            if not value_query.isdecimal():
+                msg = {'msg': 'value 쿼리스트링이 Int형이어야 합니다.'}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             posts = couple.posts.all().filter(pk=value_query)
         serializer = PostDetailSerializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -109,14 +120,18 @@ class DayCommentAPIView(APIView):
         me = get_object_or_404(Profile, user=request.user)
         couple = get_object_or_404(CoupleNet, members=me)
         filter_query = request.query_params.get('filter')
-        value = request.query_params.get('value')
-        if not (filter_query == 'when' and value):
+        value_query = request.query_params.get('value')
+        date_type = re.compile('\d{4}-\d{2}-\d{2}') # noqa
+        if not (filter_query == 'when' and value_query):
             msg = {'Err': 'filter(=when) 및 value 쿼리스트링이 모두 필요합니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
-        today_comments = couple.daycomments.all().filter(when=value)
+        elif not date_type.match(value_query):
+            msg = {'Err': 'value 쿼리스트링은 YYYY-MM-DD의 형태여야 합니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        today_comments = couple.daycomments.all().filter(when=value_query)
         serializer = DayCommentDetailSerializer(today_comments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
     def post(self, request):
         serializer = DayCommentCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -136,6 +151,9 @@ class PostCommentAPIView(APIView):
         couple = get_object_or_404(CoupleNet, members=me)
         filter_query = request.query_params.get('filter')
         value_query = request.query_params.get('value')
+        if not value_query.isdecimal():
+            msg = {'Err': 'value 쿼리스트링 값은 정수 형태여야 합니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         posts = couple.posts.all().filter(pk=value_query)
         if not (filter_query == 'postpk' and value_query):
             msg = {'Err': 'filter(=postpk) 및 value 쿼리스트링이 모두 필요합니다.'}
@@ -155,7 +173,7 @@ class PostCommentAPIView(APIView):
             couple = get_object_or_404(CoupleNet, members=me)
             post = serializer.validated_data.get('date_post')
             if not post.couple == couple:
-                msg = {'Err': '해당 게시글은 다른 커플의 게시글이거나 없는 게시글입니다.'}
+                msg = {'Err': '해당 게시글은 다른 커플의 게시글입니다.'}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             serializer.save(author=me)
             return Response(serializer.data, status=status.HTTP_200_OK)

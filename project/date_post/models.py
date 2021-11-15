@@ -13,7 +13,7 @@ class Place(models.Model):
     visit_count = models.IntegerField(default=1)
     couple = models.ForeignKey(CoupleNet, on_delete=models.CASCADE,
                                related_name='places')
-                            
+
 
 class DatePost(models.Model):
     title = models.CharField(max_length=255)
@@ -28,6 +28,7 @@ class DatePost(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE,
                               related_name='posts')
 
+
 class DayComment(models.Model):
     content = models.TextField()
     when = models.DateField()
@@ -39,7 +40,7 @@ class DayComment(models.Model):
 
 class DatePostComment(models.Model):
     date_post = models.ForeignKey(DatePost, on_delete=models.CASCADE,
-                                            related_name='comments')
+                                  related_name='comments')
     author = models.ForeignKey(Profile, on_delete=models.CASCADE,
-                                        related_name='postcomments')
+                               related_name='postcomments')
     content = models.TextField()

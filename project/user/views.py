@@ -1,5 +1,3 @@
-from django.shortcuts import get_object_or_404
-from couple_network.models import CoupleNet
 from .serializers import UserSerializer, AuthTokenSerializer, \
                          ProfileSerializer
 
@@ -42,11 +40,6 @@ class ProfileAPIView(APIView):
             context = {}
             context['Err'] = msg
             return Response(context, status=status.HTTP_404_NOT_FOUND)
-        elif (request.query_params.get('type') == 'couple'):
-            couple = get_object_or_404(CoupleNet, members=profile[0])
-            members = couple.members.all()
-            serializer = ProfileSerializer(members, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             serializer = ProfileSerializer(profile[0])
             return Response(serializer.data, status=status.HTTP_200_OK)

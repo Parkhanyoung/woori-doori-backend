@@ -1,6 +1,4 @@
 from rest_framework import serializers
-from rest_framework.response import Response
-from rest_framework import status
 
 from .models import Place, DatePost, DayComment, DatePostComment
 
@@ -22,8 +20,9 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DatePost
-        fields = ['id', 'title','content', 'score', 'when', 'author', 'place']
+        fields = ['id', 'title', 'content', 'score', 'when', 'author', 'place']
         read_only_fields = ('id',)
+
 
 class PostCreateSerializer(serializers.ModelSerializer):
     place = serializers.PrimaryKeyRelatedField(queryset=Place.objects.all())
