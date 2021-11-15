@@ -12,4 +12,4 @@ class CoupleRequest(models.Model):
 
 class CoupleNet(models.Model):
     members = models.ManyToManyField(Profile, related_name='couple_net')
-    created_at = models.DateTimeField(auto_now_add=True, editable=True)
+    created_at = models.DateField(null=True, blank=True)

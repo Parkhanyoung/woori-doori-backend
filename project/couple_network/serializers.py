@@ -21,3 +21,4 @@ class CoupleNetSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoupleNet
         fields = ['id', 'created_at', 'members']
+        read_only_fields = ('id', 'members')

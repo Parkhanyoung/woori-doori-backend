@@ -122,6 +122,16 @@ class CoupleNetworkAPIView(APIView):
             msg = {'Err': '사용자에게 온 요청이 없습니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
+    def patch(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        serializer = CoupleNetSerializer(couple, data=request.data,
+                                         partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request):
         profile = get_object_or_404(Profile, user=request.user)
         my_network = CoupleNet.objects.filter(members=profile)
