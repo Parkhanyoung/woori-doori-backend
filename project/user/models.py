@@ -8,6 +8,7 @@ class Profile(models.Model):
     nickname = models.CharField(max_length=20)
     gender = models.CharField(max_length=5, choices=(('man', '남자'),
                                                      ('woman', '여자')))
-    profile_img = models.ImageField(null=True)
+    profile_img = models.ImageField(null=True, blank=True,
+                                    upload_to='profile_images/%Y/%m/%d')
     id_code = models.CharField(max_length=255, null=True)
     is_alone = models.BooleanField(default=True)

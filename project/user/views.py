@@ -51,6 +51,8 @@ class ProfileAPIView(APIView):
             context['Err'] = msg
             return Response(context, status=status.HTTP_400_BAD_REQUEST)
 
+        ext = request.FILES['profile_img'].name.split('.')[-1]
+        request.FILES['profile_img'].name = request.user.username + '.' + ext
         serializer = ProfileSerializer(data=request.data)
         if serializer.is_valid():
             id_code = str(uuid.uuid4())[:18]

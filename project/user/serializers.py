@@ -55,8 +55,9 @@ class AuthTokenSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    profile_img = serializers.ImageField(use_url=True)
 
     class Meta:
         model = Profile
         fields = ['id', 'nickname', 'gender', 'profile_img', 'id_code']
-        read_only_fields = ('id',)
+        read_only_fields = ['id', 'id_code']
