@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 from .models import CoupleRequest, CoupleNet
 from .serializers import CoupleRequestSerializer, CoupleNetSerializer
@@ -12,6 +14,8 @@ from django.shortcuts import get_object_or_404
 
 
 class CoupleRequestAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         my_profile = get_object_or_404(Profile, user=request.user)
@@ -96,6 +100,8 @@ class CoupleRequestAPIView(APIView):
 
 
 class CoupleNetworkAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         profile = get_object_or_404(Profile, user=request.user)

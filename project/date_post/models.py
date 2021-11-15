@@ -35,3 +35,11 @@ class DayComment(models.Model):
                                related_name='daycomments')
     couple = models.ForeignKey(CoupleNet, on_delete=models.CASCADE,
                                related_name='daycomments')
+
+
+class DatePostComment(models.Model):
+    date_post = models.ForeignKey(DatePost, on_delete=models.CASCADE,
+                                            related_name='comments')
+    author = models.ForeignKey(Profile, on_delete=models.CASCADE,
+                                        related_name='postcomments')
+    content = models.TextField()

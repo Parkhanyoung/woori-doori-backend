@@ -1,17 +1,22 @@
 from user.models import Profile
 from couple_network.models import CoupleNet
 from .models import Place, DayComment
-from .serializers import PlaceSerializer, PostCreateSerializer, \
-                         PostDetailSerializer, DayCommentCreateSerializer
+from .serializers import DayCommentDetailSerializer, PlaceSerializer,  \
+                         PostDetailSerializer, DayCommentCreateSerializer, \
+                         DatePostCommentSerializer, PostCreateSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import get_object_or_404
 
 
 class PlaceAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         me = get_object_or_404(Profile, user=request.user)
@@ -42,7 +47,8 @@ class PlaceAPIView(APIView):
         if serializer.is_valid():
             name = serializer.validated_data.get('name')
             latitude = serializer.validated_data.get('latitude')
-            place = Place.objects.filter(name=name).filter(latitude=latitude)
+            place = couple.places.all().filter(name=name).filter(
+                                               latitude=latitude)
             if place:
                 place[0].visit_count += 1
                 place[0].save()
@@ -52,9 +58,12 @@ class PlaceAPIView(APIView):
                 serializer.save(couple=couple)
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DatePostAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         me = get_object_or_404(Profile, user=request.user)
@@ -83,13 +92,31 @@ class DatePostAPIView(APIView):
         if serializer.is_valid():
             me = get_object_or_404(Profile, user=request.user)
             couple = get_object_or_404(CoupleNet, members=me)
+            place = serializer.validated_data.get('place')
+            if not place.couple == couple:
+                msg = {'Err': '해당 커플의 place가 아닙니다.'}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             serializer.save(author=me, couple=couple)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DayCommentAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
+    def get(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        filter_query = request.query_params.get('filter')
+        value = request.query_params.get('value')
+        if not (filter_query == 'when' and value):
+            msg = {'Err': 'filter(=when) 및 value 쿼리스트링이 모두 필요합니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        today_comments = couple.daycomments.all().filter(when=value)
+        serializer = DayCommentDetailSerializer(today_comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
     def post(self, request):
         serializer = DayCommentCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -97,4 +124,39 @@ class DayCommentAPIView(APIView):
             couple = get_object_or_404(CoupleNet, members=me)
             serializer.save(author=me, couple=couple)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PostCommentAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        filter_query = request.query_params.get('filter')
+        value_query = request.query_params.get('value')
+        posts = couple.posts.all().filter(pk=value_query)
+        if not (filter_query == 'postpk' and value_query):
+            msg = {'Err': 'filter(=postpk) 및 value 쿼리스트링이 모두 필요합니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        elif not posts:
+            msg = {'Err': '해당 게시글은 다른 커플의 게시글이거나 없는 게시글입니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            comments = posts[0].comments.all()
+            serializer = DatePostCommentSerializer(comments, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = DatePostCommentSerializer(data=request.data)
+        if serializer.is_valid():
+            me = get_object_or_404(Profile, user=request.user)
+            couple = get_object_or_404(CoupleNet, members=me)
+            post = serializer.validated_data.get('date_post')
+            if not post.couple == couple:
+                msg = {'Err': '해당 게시글은 다른 커플의 게시글이거나 없는 게시글입니다.'}
+                return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save(author=me)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

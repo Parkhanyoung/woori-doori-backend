@@ -32,8 +32,8 @@ class UserTokenView(ObtainAuthToken):
 
 
 class ProfileAPIView(APIView):
-    # authentication_classes = (TokenAuthentication,)
-    # permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         profile = Profile.objects.filter(user=request.user)

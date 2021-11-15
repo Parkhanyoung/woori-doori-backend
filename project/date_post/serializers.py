@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Place, DatePost, DayComment
+from .models import Place, DatePost, DayComment, DatePostComment
 
 from user.serializers import ProfileSerializer
 
@@ -46,6 +46,7 @@ class DayCommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DayComment
         fields = ['id', 'content', 'when']
+        read_only_fields = ('id',)
 
 
 class DayCommentDetailSerializer(serializers.ModelSerializer):
@@ -54,3 +55,15 @@ class DayCommentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = DayComment
         fields = ['id', 'content', 'when', 'author']
+        read_only_fields = ('id',)
+
+
+class DatePostCommentSerializer(serializers.ModelSerializer):
+    author = ProfileSerializer(read_only=True)
+    date_post = serializers.PrimaryKeyRelatedField(
+                queryset=DatePost.objects.all())
+
+    class Meta:
+        model = DatePostComment
+        fields = ['id', 'author', 'content', 'date_post']
+        read_only_fields = ('id',)
