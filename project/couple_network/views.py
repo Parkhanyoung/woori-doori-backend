@@ -115,6 +115,10 @@ class CoupleNetworkAPIView(APIView):
             couple = CoupleNet()
             couple.save()
             couple.members.add(profile.pk, partner.pk)
+            profile.is_alone = False
+            partner.is_alone = False
+            profile.save()
+            partner.save()
             my_request[0].delete()
             serializer = CoupleNetSerializer(couple)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
