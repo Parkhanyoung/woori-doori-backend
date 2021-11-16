@@ -140,6 +140,10 @@ class CoupleNetworkAPIView(APIView):
         profile = get_object_or_404(Profile, user=request.user)
         my_network = CoupleNet.objects.filter(members=profile)
         if my_network:
+            ex_couple = my_network[0].members.all()
+            for member in ex_couple:
+                member.is_alone = True
+                member.save()
             my_network[0].delete()
             msg = {'Succ': '성공적으로 삭제되었습니다.'}
             return Response(msg, status=status.HTTP_204_NO_CONTENT)
