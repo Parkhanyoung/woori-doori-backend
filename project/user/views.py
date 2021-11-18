@@ -39,7 +39,7 @@ class ProfileAPIView(APIView):
             msg = f'{request.user.username}님은 아직 프로필을 만들지 않았습니다.'
             context = {}
             context['Err'] = msg
-            return Response(context, status=status.HTTP_404_NOT_FOUND)
+            return Response(context, status=status.HTTP_200_OK)
         else:
             serializer = ProfileSerializer(profile[0])
             return Response(serializer.data, status=status.HTTP_200_OK)

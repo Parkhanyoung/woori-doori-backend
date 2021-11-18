@@ -33,8 +33,8 @@ class CoupleRequestAPIView(APIView):
             context['data'] = serializer.data
             context['receiver'] = 'me'
             return Response(context, status=status.HTTP_200_OK)
-        Err = '받거나 보낸 요청이 없습니다.'
-        return Response({'Err': Err}, status=status.HTTP_404_NOT_FOUND)
+        msg = {'msg': '사용자에게 온 커플 요청이 없습니다.'}
+        return Response(msg, status=status.HTTP_200_OK)
 
     def check_myself(self):
         me = get_object_or_404(Profile, user=self.request.user)
@@ -95,8 +95,8 @@ class CoupleRequestAPIView(APIView):
             msg = {'succ': '요청이 삭제되었습니다.'}
             return Response(msg, status=status.HTTP_204_NO_CONTENT)
         else:
-            msg = {'Err': '사용자에게 온 요청이 없습니다.'}
-            return Response(msg, status=status.HTTP_404_NOT_FOUND)
+            msg = {'Err': '잘못된 삭제 요청입니다. 사용자에게 온 요청이 없습니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CoupleNetworkAPIView(APIView):
@@ -147,5 +147,5 @@ class CoupleNetworkAPIView(APIView):
             my_network[0].delete()
             msg = {'Succ': '성공적으로 삭제되었습니다.'}
             return Response(msg, status=status.HTTP_204_NO_CONTENT)
-        msg = {'Err': '삭제할 couple network가 없습니다'}
-        return Response(msg, status=status.HTTP_404_NOT_FOUND)
+        msg = {'Err': '잘못된 요청입니다. 삭제할 couple network가 없습니다'}
+        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
