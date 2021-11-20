@@ -92,7 +92,7 @@ class CoupleRequestAPIView(APIView):
                                                   Q(responsor=profile))
         if my_request:
             my_request[0].delete()
-            msg = {'succ': '요청이 삭제되었습니다.'}
+            msg = {'Succ': '요청이 삭제되었습니다.'}
             return Response(msg, status=status.HTTP_204_NO_CONTENT)
         else:
             msg = {'Err': '잘못된 삭제 요청입니다. 사용자에게 온 요청이 없습니다.'}
@@ -123,8 +123,8 @@ class CoupleNetworkAPIView(APIView):
             serializer = CoupleNetSerializer(couple)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            msg = {'Err': '사용자에게 온 요청이 없습니다.'}
-            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+            msg = {'msg': '사용자에게 온 요청이 없습니다.'}
+            return Response(msg, status=status.HTTP_200_OK)
 
     def patch(self, request):
         me = get_object_or_404(Profile, user=request.user)

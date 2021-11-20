@@ -12,3 +12,6 @@ class Profile(models.Model):
                                     upload_to='profile_images/%Y/%m/%d')
     id_code = models.CharField(max_length=255, null=True)
     is_alone = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nickname

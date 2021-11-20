@@ -61,6 +61,39 @@ class PlaceAPIView(APIView):
                                 status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def patch(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        placepk = request.data.get('placepk')
+        if not placepk:
+            msg = {'Err': 'placepk를 포함하여 요청을 보내주세요.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        place = couple.places.all().filter(pk=placepk)
+        if not place:
+            msg = {'Err': '해당 커플의 place가 아니거나 존재하지 않는 place입니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        serializer = PlaceSerializer(place[0], data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        placepk = request.data.get('placepk')
+        if not placepk:
+            msg = {'Err': 'placepk를 포함하여 요청을 보내주세요.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        place = couple.places.all().filter(pk=placepk)
+        if not place:
+            msg = {'Err': '해당 커플의 place가 아니거나 존재하지 않는 place입니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        placename = place[0].name
+        place[0].delete()
+        msg = {'Succ': f'{placename}이(가) 성공적으로 삭제되었습니다.'}
+        return Response(msg, status=status.HTTP_204_NO_CONTENT)
+
 
 class DatePostAPIView(APIView):
     authentication_classes = (TokenAuthentication,)
@@ -105,10 +138,28 @@ class DatePostAPIView(APIView):
             couple = get_object_or_404(CoupleNet, members=me)
             place = serializer.validated_data.get('place')
             if not place.couple == couple:
-                msg = {'Err': '해당 커플의 place가 아닙니다.'}
+                msg = {'Err': '요청 사용자 커플의 place가 아닙니다.'}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             serializer.save(author=me, couple=couple)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        postpk = request.data.get('postpk')
+        if not postpk:
+            msg = {'Err': 'postpk를 body에 담아 요청을 보내주세요'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        post = couple.posts.all().filter(pk=postpk)
+        if not post:
+            msg = {'Err': '요청 사용자 커플의 post가 아니거나 없는 post입니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        serializer = PostCreateSerializer(post[0], data=request.data,
+                                          partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

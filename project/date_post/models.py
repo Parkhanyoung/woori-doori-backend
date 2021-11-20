@@ -14,6 +14,9 @@ class Place(models.Model):
     couple = models.ForeignKey(CoupleNet, on_delete=models.CASCADE,
                                related_name='places')
 
+    def __str__(self):
+        return self.name
+
 
 class DatePost(models.Model):
     title = models.CharField(max_length=255)
@@ -27,6 +30,9 @@ class DatePost(models.Model):
                                related_name='posts')
     place = models.ForeignKey(Place, on_delete=models.CASCADE,
                               related_name='posts')
+
+    def __str__(self):
+        return self.title
 
 
 class DayComment(models.Model):
