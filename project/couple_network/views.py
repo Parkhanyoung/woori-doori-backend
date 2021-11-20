@@ -33,7 +33,7 @@ class CoupleRequestAPIView(APIView):
             context['data'] = serializer.data
             context['receiver'] = 'me'
             return Response(context, status=status.HTTP_200_OK)
-        msg = {'msg': '사용자에게 온 커플 요청이 없습니다.'}
+        msg = {'msg': '사용자에게 온 커플 요청이 없습니다.', 'receiver': 'no'}
         return Response(msg, status=status.HTTP_200_OK)
 
     def check_myself(self):
