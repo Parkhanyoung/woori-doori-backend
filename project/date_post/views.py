@@ -20,6 +20,7 @@ class PlaceAPIView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
+        print(request.user)
         me = get_object_or_404(Profile, user=request.user)
         couple = get_object_or_404(CoupleNet, members=me)
         filter_query = request.query_params.get('filter')
