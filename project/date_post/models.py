@@ -1,7 +1,8 @@
 from django.db import models
 
-from user.models import Profile
+from user.models import Profile, OverwriteStorage
 from couple_network.models import CoupleNet
+
 
 
 class Place(models.Model):
@@ -50,3 +51,13 @@ class DatePostComment(models.Model):
     author = models.ForeignKey(Profile, on_delete=models.CASCADE,
                                related_name='postcomments')
     content = models.TextField()
+
+
+class PostImage(models.Model):
+    date_post = models.ForeignKey(DatePost, on_delete=models.CASCADE,
+                                  related_name='images')
+    uploader = models.ForeignKey(Profile, on_delete=models.CASCADE,
+                                 related_name='images')
+    content = models.ImageField(null=True, blank=True,
+                                storage=OverwriteStorage(),
+                                upload_to='post_images/%Y/%m/%d')

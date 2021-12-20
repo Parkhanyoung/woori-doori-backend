@@ -2,7 +2,9 @@ from user.models import Profile
 from couple_network.models import CoupleNet
 from .serializers import DayCommentDetailSerializer, PlaceSerializer,  \
                          PostDetailSerializer, DayCommentCreateSerializer, \
-                         DatePostCommentSerializer, PostCreateSerializer
+                         DatePostCommentSerializer, PostCreateSerializer, \
+                         PostImageSerializer
+from .helpers import modify_img_for_multiple_imgs
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,6 +13,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.db.models import Q
 
 import re
 
@@ -129,7 +133,8 @@ class DatePostAPIView(APIView):
                 msg = {'msg': 'value 쿼리스트링이 Int형이어야 합니다.'}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
             posts = couple.posts.all().filter(pk=value_query)
-        serializer = PostDetailSerializer(posts, many=True)
+        serializer = PostDetailSerializer(posts, many=True,
+                                          context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -181,14 +186,25 @@ class DayCommentAPIView(APIView):
             msg = {'Err': 'value 쿼리스트링은 YYYY-MM-DD의 형태여야 합니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         today_comments = couple.daycomments.all().filter(when=value_query)
-        serializer = DayCommentDetailSerializer(today_comments, many=True)
+        serializer = DayCommentDetailSerializer(today_comments, many=True,
+                                                context={'request':request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        when = request.data.get('when')
+        if not when:
+            msg = {'Err': 'when을 포함하여 요청을 보내주세요'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+        
+        if couple.daycomments.all().filter(Q(when=when) & Q(author=me)):
+            msg = {'Err': '이미 해당 날짜의 daycomment를 작성했습니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = DayCommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            me = get_object_or_404(Profile, user=request.user)
-            couple = get_object_or_404(CoupleNet, members=me)
             serializer.save(author=me, couple=couple)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -215,11 +231,13 @@ class PostCommentAPIView(APIView):
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         else:
             comments = posts[0].comments.all()
-            serializer = DatePostCommentSerializer(comments, many=True)
+            serializer = DatePostCommentSerializer(comments, many=True,
+                                                   context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = DatePostCommentSerializer(data=request.data)
+        serializer = DatePostCommentSerializer(data=request.data,
+                                               context={'request':request})
         if serializer.is_valid():
             me = get_object_or_404(Profile, user=request.user)
             couple = get_object_or_404(CoupleNet, members=me)
@@ -230,3 +248,59 @@ class PostCommentAPIView(APIView):
             serializer.save(author=me)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PostImageAPIView(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        me = get_object_or_404(Profile, user=request.user)
+        couple = get_object_or_404(CoupleNet, members=me)
+
+        post_pk = request.data.get('date_post')
+        if not post_pk:
+            msg = {'Err': 'date_post를 포함하여 요청을 보내주세요.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        
+        post = couple.posts.all().filter(pk=post_pk)
+        if not post.exists():
+            msg = {'Err': '해당 게시글은 다른 커플의 게시글입니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+        if post[0].images.all():
+            msg = {'Err': '해당 게시글에 이미 이미지가 있습니다. update url을 이용하세요.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            images = dict((request.data).lists())['images']
+        except:
+            msg = {'Err': 'images를 포함하여 요청을 보내주세요.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+        if not (1 <= len(images) <= 3 and images[0] != ''):
+            msg = {'Err': '사진을 1개 이상 3개 이하로 첨부해주세요.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            i = 0
+            for img in images:
+                i += 1
+                modified_img = modify_img_for_multiple_imgs(post_pk, img)
+                serializer = PostImageSerializer(data=modified_img)
+                success = True
+                if serializer.is_valid():
+                    img.name = f'{post_pk}-{i}.png'
+                    serializer.save(uploader=me)
+                else:
+                    success = False
+                    transaction.set_rollback(True)
+                    break
+
+        if success:
+            msg = {'Succ': f'{len(images)}개의 사진이 성공적으로 저장되었습니다.'}
+            return Response(msg, status=status.HTTP_201_CREATED)
+        else:
+            msg = {'Err': '잘못된 형식의 사진이 포함되어 있습니다.'}
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        

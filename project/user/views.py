@@ -1,5 +1,5 @@
 from .serializers import UserSerializer, AuthTokenSerializer, \
-                         ProfileSerializer
+                         ProfileSerializer, ProfileRetrieveSerializer
 from .models import Profile
 from couple_network.models import CoupleNet
 
@@ -61,12 +61,13 @@ class ProfileAPIView(APIView):
             context = {}
             context['Err'] = msg
             return Response(context, status=status.HTTP_200_OK)
-        else:
-            serializer = ProfileSerializer(profile[0])
-            context = {}
-            context['profile_data'] = serializer.data
-            context['username'] = request.user.username
-            return Response(context, status=status.HTTP_200_OK)
+
+        serializer = ProfileRetrieveSerializer(profile[0],
+                                               context={'request': request})
+        context = {}
+        context['profile_data'] = serializer.data
+        context['username'] = request.user.username
+        return Response(context, status=status.HTTP_200_OK)
 
     def post(self, request):
         user = request.user
@@ -86,9 +87,12 @@ class ProfileAPIView(APIView):
     def patch(self, request):
         user = request.user
         profile = get_object_or_404(Profile, user=user)
-        serializer = ProfileSerializer(profile, data=request.data,
+        serializer = ProfileSerializer(profile,
+                                       data=request.data,
                                        partial=True)
         if serializer.is_valid():
+            ext = request.FILES['profile_img'].name.split('.')[-1]
+            request.FILES['profile_img'].name = user.username + '.' + ext
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

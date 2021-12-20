@@ -62,8 +62,22 @@ class AuthTokenSerializer(serializers.Serializer):
         return attrs
 
 
+class ProfileRetrieveSerializer(serializers.ModelSerializer):
+    profile_img = serializers.SerializerMethodField()
+
+    def get_profile_img(self, obj):
+        request = self.context.get('request')
+        image_url = obj.profile_img.url
+        return request.build_absolute_uri(image_url)
+
+    class Meta:
+        model = Profile
+        fields = ['id', 'nickname', 'gender', 'profile_img', 'id_code']
+        read_only_fields = ['id', 'id_code']
+
+
 class ProfileSerializer(serializers.ModelSerializer):
-    profile_img = serializers.ImageField(use_url=True)
+    profile_img = serializers.ImageField()
 
     class Meta:
         model = Profile
