@@ -118,9 +118,12 @@ class DatePostAPIView(APIView):
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         elif not (filter_query == 'placepk' or
                   filter_query == 'when' or
-                  filter_query == 'postpk'):
+                  filter_query == 'postpk' or
+                  filter_query == 'all'):
             msg = {'Err': 'filter 쿼리스트링 값이 올바르지 않습니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        elif filter_query == 'all':
+            posts = couple.posts.all()
         elif filter_query == 'placepk':
             if not value_query.isdecimal():
                 msg = {'Err': 'value 쿼리스트링이 Int형이어야 합니다.'}
