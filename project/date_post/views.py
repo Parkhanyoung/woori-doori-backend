@@ -58,8 +58,11 @@ class PlaceAPIView(APIView):
             if place:
                 place[0].visit_count += 1
                 place[0].save()
-                msg = {'Succ': '기존 장소의 방문 횟수가 1 증가했습니다.'}
-                return Response(msg, status=status.HTTP_200_OK)
+                context = {
+                    'id': place[0].id,
+                    'Succ': '기존 장소의 방문 횟수가 1 증가했습니다.'
+                    }
+                return Response(context, status=status.HTTP_200_OK)
             else:
                 serializer.save(couple=couple)
                 return Response(serializer.data,
