@@ -8,9 +8,12 @@ from .models import CoupleRequest, CoupleNet
 from .serializers import CoupleRequestSerializer, CoupleNetSerializer
 
 from user.models import Profile
+from user.serializers import ProfileRetrieveSerializer
 
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+
+from itertools import chain
 
 
 class CoupleRequestAPIView(APIView):
@@ -102,6 +105,16 @@ class CoupleRequestAPIView(APIView):
 class CoupleNetworkAPIView(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        my_profile =  Profile.objects.filter(user=request.user)
+        couple = get_object_or_404(CoupleNet, members=my_profile[0])
+        partner_profile = couple.members.all().exclude(pk=my_profile[0].pk)
+        profiles = list(chain(my_profile, partner_profile))
+        serializer = ProfileRetrieveSerializer(profiles, many=True,
+                                               context={'request':request})
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         profile = get_object_or_404(Profile, user=request.user)
