@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from itertools import chain
+from datetime import datetime
 
 
 class CoupleRequestAPIView(APIView):
@@ -108,13 +109,21 @@ class CoupleNetworkAPIView(APIView):
 
     def get(self, request):
         my_profile =  Profile.objects.filter(user=request.user)
-        couple = get_object_or_404(CoupleNet, members=my_profile[0])
+        couple = get_object_or_404(CoupleNet, members=my_profile.first())
         partner_profile = couple.members.all().exclude(pk=my_profile[0].pk)
         profiles = list(chain(my_profile, partner_profile))
         serializer = ProfileRetrieveSerializer(profiles, many=True,
                                                context={'request':request})
+        try:
+            dday = (datetime.now().date() - couple.created_at).days
+        except:
+            dday = '미설정'
+        context = {
+            'dday': dday,
+            'profiles': serializer.data 
+        }
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(context, status=status.HTTP_200_OK)
 
     def post(self, request):
         profile = get_object_or_404(Profile, user=request.user)
