@@ -123,7 +123,7 @@ class DatePostAPIView(APIView):
             msg = {'Err': 'filter 쿼리스트링 값이 올바르지 않습니다.'}
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
         elif filter_query == 'all':
-            posts = couple.posts.all()
+            posts = couple.posts.all().order_by('-when', '-id')
         elif filter_query == 'placepk':
             if not value_query.isdecimal():
                 msg = {'Err': 'value 쿼리스트링이 Int형이어야 합니다.'}
@@ -133,7 +133,7 @@ class DatePostAPIView(APIView):
             if not date_type.match(value_query):
                 msg = {'Err': 'value 쿼리스트링이 YYYY-MM-DD의 형태여야 합니다.'}
                 return Response(msg, status=status.HTTP_400_BAD_REQUEST)
-            posts = couple.posts.all().filter(when=value_query)
+            posts = couple.posts.all().filter(when=value_query).order_by('id')
         elif filter_query == 'postpk':
             if not value_query.isdecimal():
                 msg = {'msg': 'value 쿼리스트링이 Int형이어야 합니다.'}
